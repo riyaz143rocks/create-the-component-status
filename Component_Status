@@ -1,0 +1,107 @@
+import groovy.json.JsonSlurper
+
+import org.apache.poi.ss.usermodel.*;
+
+import org.apache.poi.hssf.usermodel.*;
+
+import org.apache.poi.xssf.usermodel.*;
+
+import org.apache.poi.ss.util.*;
+
+import org.apache.poi.ss.usermodel.*;
+
+import java.io.*;
+
+
+
+def readData() {
+
+    def path = "";
+
+    InputStream inputStream = new FileInputStream(Nightly_Component_Test_execution_comparison_between_Master_and_Release.csv);
+
+    Workbook workbook = WorkbookFactory.create(inputStream);
+
+    Sheet sheet = workbook.getSheetAt("Nightly_Component_Test_exe");
+
+    Iterator rowIterator = sheet.rowIterator();
+
+    rowIterator.next()
+
+    Row row;
+
+    def jobName = []
+
+    while(rowIterator.hasNext()) {
+
+        row = rowIterator.next()
+
+        def rowIndex = row.getRowNum()
+
+        def colIndex;
+
+        def jobName = []
+
+       
+
+        for (Cell cell : row) {
+
+            colIndex = cell.getColumnIndex()
+
+            jobName[colIndex] = cell.getRichStringCellValue().getString();
+
+        }
+
+    jobName << jobName
+
+    }
+
+    jobName
+
+}
+
+
+
+def getJobStatus(String jobName){
+
+    def request = httpRequest "http://edison-edge-jenkins.apps.ge.com/job/Edison-Imaging-Service/job/$(jobName)/lastbuild/api/json"
+
+    def requestJson = new JsonSlurper().parseText(request.getContent())
+
+    List branches = new JsonSlurper().parse(apiUrl.newReader())
+
+    for (buildsByBranchName in branches ) {
+
+        params.add(branch.name)
+
+    }
+
+    return params
+
+    return requestJson['result']
+
+}
+
+
+
+pipeline {
+
+    agent any
+
+    stages {
+
+        stage('check'){
+
+            steps{
+
+                jobName = readData()
+
+                getJobStatus(jobName)
+
+            }
+
+        }
+
+    }
+
+}
